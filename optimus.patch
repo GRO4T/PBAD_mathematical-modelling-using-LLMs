@@ -1,0 +1,17 @@
+diff --git a/configure.py b/configure.py
+index c9da2d1..7f43f6d 100644
+--- a/configure.py
++++ b/configure.py
+@@ -1,9 +1,12 @@
++import os
++
+ from utils import get_templates
+ 
+ api_keys = [
+     # "sk-API-KEY-1",
+     # "sk-API-KEY-2",
+     # ...
++    os.environ["OPENAI_API_KEY"],
+ ]
+ 
+ # Get templates
