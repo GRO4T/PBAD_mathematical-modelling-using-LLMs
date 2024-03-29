@@ -15,3 +15,35 @@ index c9da2d1..7f43f6d 100644
  ]
  
  # Get templates
+diff --git a/gpt4or.py b/gpt4or.py
+index 50916a6..f63802a 100644
+--- a/gpt4or.py
++++ b/gpt4or.py
+@@ -40,10 +40,11 @@ from configure import (
+ 
+ from typing import List, Dict
+ 
+-from langchain.prompts.chat import HumanMessagePromptTemplate, AIMessage
++from langchain.prompts.chat import HumanMessagePromptTemplate
+ from langchain.prompts import ChatPromptTemplate
+-from langchain.prompts.chat import SystemMessage
+ from langchain.chat_models import ChatOpenAI
++from langchain_core.messages.ai import AIMessage
++from langchain_core.messages.system import SystemMessage
+ 
+ from utils import (
+     read_problem_from_entire_file,
+diff --git a/utils.py b/utils.py
+index 636e173..92ea580 100644
+--- a/utils.py
++++ b/utils.py
+@@ -2,7 +2,8 @@ import os
+ import subprocess
+ import importlib
+ 
+-from langchain.prompts.chat import HumanMessagePromptTemplate, AIMessage
++from langchain.prompts.chat import HumanMessagePromptTemplate
++from langchain_core.messages.ai import AIMessage
+ from langchain.prompts import ChatPromptTemplate
+ 
+ import re
