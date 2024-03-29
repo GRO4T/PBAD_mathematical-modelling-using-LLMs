@@ -12,26 +12,31 @@ prices = data["prices"]
 M = len(prices)
 N = len(available)
 
-# Create a new Gurobi model
-model = gp.Model("Production_Optimization")
+# Create a new model
+model = gp.Model("production_optimization")
 
-# Decision Variables
-amount = model.addVars(M, lb=0, vtype=gp.GRB.CONTINUOUS, name="amount")
+# Decision variables
+x = {}
+for j in range(M):
+    x[j] = model.addVar(lb=0, vtype=gp.GRB.CONTINUOUS, name=f"x_{j}")
 
-# Objective Function
-model.setObjective(gp.quicksum(prices[j] * amount[j] for j in range(M)), sense=gp.GRB.MAXIMIZE)
+# Update model to integrate new variables
+model.update()
 
-# Raw material availability constraints
-for i in range(N):  # Iterate over the number of raw materials
-    model.addConstr(gp.quicksum(requirements[j][i] * amount[j] for j in range(M)) <= available[i])
+# Set objective function
+model.setObjective(gp.quicksum(prices[j] * x[j] for j in range(M)), sense=gp.GRB.MAXIMIZE)
+
+# Add constraints
+for i in range(N):
+    model.addConstr(gp.quicksum(requirements[j][i] * x[j] for j in range(M)) <= available[i], name=f"raw_material_{i}")
 
 # Optimize the model
 model.optimize()
 
 # Extract the solution
-amount_solution = [amount[j].x for j in range(M)]
+amount = [x[j].x for j in range(M)]
 
 # Save the output to a file
-output_data = {"amount": amount_solution}
-with open("output.json", "w") as outfile:
-    json.dump(output_data, outfile, indent=4)
+output = {"amount": amount}
+with open("output.json", "w") as file:
+    json.dump(output, file, indent=4)
