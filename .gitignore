@@ -1,3 +1,7 @@
+gptcode.py
+output.json
+
+*.out
 *.log
 *.pyc
 
@@ -5,3 +9,6 @@ venv/
 .cache/
 coding/
 __pycache__/
+
+results/
+problems.txt
