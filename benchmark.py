@@ -1,7 +1,8 @@
-import re
-import os
-import subprocess
+import argparse
 import enum
+import os
+import re
+import subprocess
 
 from natsort import natsorted
 
@@ -25,20 +26,58 @@ def check_result(optimus_output: str) -> Result:
         return Result.LOGIC_ERROR
 
 
-MODEL = "gpt-3.5-turbo"
-MAX_TRY = 1
+def get_all_problems_from_directory(directory: str) -> list[str]:
+    return list(
+        map(
+            lambda x: PROBLEM_DIR + x,
+            natsorted(filter(lambda x: "problem" in x, os.listdir(PROBLEM_DIR))),
+        )
+    )
+
+
+def get_problems_from_file(problems_file: str) -> list[str]:
+    problems = []
+    with open(problems_file, "r", encoding="utf-8") as f:
+        for problem in f.readlines():
+            problems.append(problem.strip())
+    return problems
+
+
 MODE = 105
-PROBLEM_DIR = "./datasets/introduction_to_linear_optimization/"
+PROBLEM_DIR = "./datasets/model_building_in_mathematical_programming/"
+
+parser = argparse.ArgumentParser(description="Execute benchmarks for problems.")
+parser.add_argument(
+    "--model",
+    type=str,
+    required=False,
+    default="gpt-3.5-turbo",
+    help="Name of the LLM to use.",
+)
+parser.add_argument(
+    "--max_try",
+    type=int,
+    required=False,
+    default=0,
+    help="Maximum retry prompts to LLM.",
+)
+parser.add_argument(
+    "--problem_list", type=str, required=False, help="File containing list of problems."
+)
+args = parser.parse_args()
 
 results = []
 
-with open("benchmark.log", "w") as benchmark_log:
-    for problem_id, problem in enumerate(natsorted(os.listdir(PROBLEM_DIR))):
-        if problem_id > 5:
-            break
-
-        cmd = f"python3 OptiMUS/gpt4or.py --model {MODEL} --maxtry {MAX_TRY} --mode {MODE} --verbose True --prob {PROBLEM_DIR}{problem}"
-        print(f"Running OptiMUS for problem: {PROBLEM_DIR}{problem}")
+with open("benchmark.log", "w", encoding="utf-8") as benchmark_log:
+    if args.problem_list:
+        problems = get_problems_from_file(args.problem_list)
+    else:
+        problems = get_all_problems_from_directory(PROBLEM_DIR)
+    for problem_id, problem in enumerate(problems):
+        cmd = f"python3 OptiMUS/gpt4or.py --model {args.model} --maxtry {args.max_try} --mode {MODE} --verbose True --prob {problem}"
+        benchmark_log.write(f">>> {cmd}\n")
+        benchmark_log.flush()
+        print(f"Running OptiMUS for problem: {problem}")
         optimus_output = subprocess.check_output(
             cmd, stderr=subprocess.STDOUT, shell=True
         ).decode("utf-8")
@@ -48,6 +87,6 @@ with open("benchmark.log", "w") as benchmark_log:
 
         result = check_result(optimus_output)
         print(result)
-        results.append((PROBLEM_DIR + problem, result))
+        results.append((problem, result))
 
 print(results)
