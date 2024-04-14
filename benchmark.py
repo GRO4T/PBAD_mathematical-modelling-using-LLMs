@@ -44,7 +44,7 @@ def get_problems_from_file(problems_file: str) -> list[str]:
 
 
 MODE = 105
-PROBLEM_DIR = "./datasets/model_building_in_mathematical_programming/"
+PROBLEM_DIR = "./datasets/introduction_to_linear_optimization/"
 
 parser = argparse.ArgumentParser(description="Execute benchmarks for problems.")
 parser.add_argument(
@@ -64,6 +64,9 @@ parser.add_argument(
 parser.add_argument(
     "--problem_list", type=str, required=False, help="File containing list of problems."
 )
+parser.add_argument(
+    "--solver", type=str, required=False, help="Solver to use", default="gurobi"
+)
 args = parser.parse_args()
 
 results = []
@@ -74,7 +77,7 @@ with open("benchmark.log", "w", encoding="utf-8") as benchmark_log:
     else:
         problems = get_all_problems_from_directory(PROBLEM_DIR)
     for problem_id, problem in enumerate(problems):
-        cmd = f"python3 OptiMUS/gpt4or.py --model {args.model} --maxtry {args.max_try} --mode {MODE} --verbose True --prob {problem}"
+        cmd = f"python3 OptiMUS/gpt4or.py --model {args.model} --solver {args.solver} --maxtry {args.max_try} --mode {MODE} --verbose True --prob {problem}"
         benchmark_log.write(f">>> {cmd}\n")
         benchmark_log.flush()
         print(f"Running OptiMUS for problem: {problem}")
