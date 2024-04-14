@@ -43,7 +43,20 @@ def get_problems_from_file(problems_file: str) -> list[str]:
     return problems
 
 
-MODE = 105
+def get_problem_type(problem: str) -> str:
+    with open(os.path.join(problem, "description.txt"), "r") as description_file:
+        description_content = description_file.read()
+
+    problem_type_pattern = r"PROBLEM TYPE: (LP|MIP|MILP|LP or MILP)"
+    problem_type_match = re.search(problem_type_pattern, description_content)
+
+    if not problem_type_match:
+        raise Exception("Problem type not found in description.txt")
+
+    return problem_type_match.group(1).strip()
+
+
+MODE = 104
 PROBLEM_DIR = "./datasets/introduction_to_linear_optimization/"
 
 parser = argparse.ArgumentParser(description="Execute benchmarks for problems.")
@@ -58,7 +71,7 @@ parser.add_argument(
     "--max_try",
     type=int,
     required=False,
-    default=0,
+    default=2,
     help="Maximum retry prompts to LLM.",
 )
 parser.add_argument(
@@ -76,6 +89,7 @@ with open("benchmark.log", "w", encoding="utf-8") as benchmark_log:
         problems = get_problems_from_file(args.problem_list)
     else:
         problems = get_all_problems_from_directory(PROBLEM_DIR)
+
     for problem_id, problem in enumerate(problems):
         cmd = f"python3 OptiMUS/gpt4or.py --model {args.model} --solver {args.solver} --maxtry {args.max_try} --mode {MODE} --verbose True --prob {problem}"
         benchmark_log.write(f">>> {cmd}\n")
@@ -89,7 +103,8 @@ with open("benchmark.log", "w", encoding="utf-8") as benchmark_log:
         benchmark_log.flush()
 
         result = check_result(optimus_output)
-        print(result)
+        problem_type = get_problem_type(problem)
+        print(f"{problem_type} {result}")
         results.append((problem, result))
 
 print(results)

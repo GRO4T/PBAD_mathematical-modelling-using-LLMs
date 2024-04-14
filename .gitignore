@@ -1,5 +1,6 @@
 gptcode.py
 output.json
+test-description.py
 
 *.out
 *.log
