@@ -1,4 +1,0 @@
-[submodule "OptiMUS"]
-	path = OptiMUS
-	url = git@github.com:teshnizi/OptiMUS.git
-	branch = optimus_v1
