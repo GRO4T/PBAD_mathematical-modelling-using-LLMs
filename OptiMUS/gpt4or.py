@@ -68,7 +68,7 @@ class GPT4OR(object):
         self._model_name = model_name  # type: str
 
         # The large language model instance
-        self._llm = None  # type: ChatOpenRouter 
+        self._llm = None  # type: ChatOpenRouter
         self._apikey = api_key  # type: str
 
         # The overall OR model data, including input, output format,
@@ -206,6 +206,9 @@ class GPT4OR(object):
         :return:
         """
 
+        # self._llm = ChatOpenRouter(
+        #     model_name=self._model_name, temperature=0.3, openai_api_key=self._apikey
+        # )
         self._llm = ChatOpenRouter(
             model_name=self._model_name, temperature=0.3, openai_api_key=self._apikey
         )
@@ -440,7 +443,10 @@ class GPT4OR(object):
         if not syntax_only:
             spec = importlib.util.spec_from_file_location("test", test_file)  # noqa
             test = importlib.util.module_from_spec(spec)  # noqa
-            spec.loader.exec_module(test)
+            try:
+                spec.loader.exec_module(test)
+            except Exception as e:
+                self._log(f"{test_file} failed: {e}")
 
         formulation_request = HumanMessagePromptTemplate.from_template(
             template_formulation
@@ -662,7 +668,11 @@ class GPT4OR(object):
             os.chdir(current_path)
             return [STATUS_SYNTAX_ERROR, self._iter]
 
-        res = test.run()
+        try:
+            res = test.run()
+        except Exception as e:
+            self._log(f"test.run() failed: {e}")
+            return [STATUS_SYNTAX_ERROR, self._iter]
 
         if len(res) > 0:
             os.chdir(current_path)

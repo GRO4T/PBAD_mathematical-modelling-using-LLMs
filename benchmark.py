@@ -11,6 +11,7 @@ class Result(enum.Enum):
     OK = 0
     SYNTAX_ERROR = 1
     LOGIC_ERROR = 2
+    BENCHMARK_ERROR = 3
 
 
 def check_result(optimus_output: str) -> Result:
@@ -29,8 +30,8 @@ def check_result(optimus_output: str) -> Result:
 def get_all_problems_from_directory(directory: str) -> list[str]:
     return list(
         map(
-            lambda x: PROBLEM_DIR + x,
-            natsorted(filter(lambda x: "problem" in x, os.listdir(PROBLEM_DIR))),
+            lambda x: directory + x,
+            natsorted(filter(lambda x: "problem" in x, os.listdir(directory))),
         )
     )
 
@@ -47,7 +48,7 @@ def get_problem_type(problem: str) -> str:
     with open(os.path.join(problem, "description.txt"), "r") as description_file:
         description_content = description_file.read()
 
-    problem_type_pattern = r"PROBLEM TYPE: (LP|MIP|MILP|LP or MILP)"
+    problem_type_pattern = r"PROBLEM TYPE: (LP or MILP|LP|MIP|MILP)"
     problem_type_match = re.search(problem_type_pattern, description_content)
 
     if not problem_type_match:
@@ -57,7 +58,11 @@ def get_problem_type(problem: str) -> str:
 
 
 MODE = 104
-PROBLEM_DIR = "./datasets/introduction_to_linear_optimization/"
+PROBLEM_DIRS = [
+    "./datasets/introduction_to_linear_optimization/",
+    "./datasets/lectures_in_lp_modeling/",
+    "./datasets/model_building_in_mathematical_programming/",
+]
 
 parser = argparse.ArgumentParser(description="Execute benchmarks for problems.")
 parser.add_argument(
@@ -88,16 +93,23 @@ with open("benchmark.log", "w", encoding="utf-8") as benchmark_log:
     if args.problem_list:
         problems = get_problems_from_file(args.problem_list)
     else:
-        problems = get_all_problems_from_directory(PROBLEM_DIR)
+        problems = []
+        for problem_dir in PROBLEM_DIRS:
+            problems.extend(get_all_problems_from_directory(problem_dir))
 
     for problem_id, problem in enumerate(problems):
         cmd = f"python3 OptiMUS/gpt4or.py --model {args.model} --solver {args.solver} --maxtry {args.max_try} --mode {MODE} --verbose True --prob {problem}"
         benchmark_log.write(f">>> {cmd}\n")
         benchmark_log.flush()
         print(f"Running OptiMUS for problem: {problem}")
-        optimus_output = subprocess.check_output(
-            cmd, stderr=subprocess.STDOUT, shell=True
-        ).decode("utf-8")
+        try:
+            optimus_output = subprocess.check_output(
+                cmd, stderr=subprocess.STDOUT, shell=True
+            ).decode("utf-8")
+        except subprocess.CalledProcessError as e:
+            print(f"Error running OptiMUS for problem {problem}: {e}")
+            results.append((problem, Result.BENCHMARK_ERROR))
+            continue
 
         benchmark_log.write(optimus_output)
         benchmark_log.flush()
